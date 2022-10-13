@@ -14,21 +14,27 @@
 </div>
 
 <div class = "column1">
-  <button id="login">Sign In Here</button>
-  <button id="createname" class="hidden">Create Username</button>
-  <button id="logout">Log Out</button>
-  <div>&nbsp</div>
-  <button id="create">Create Twit</button>
-  <input id="username" class="hidden" placeholder="username">
-  <input id="image" class="hidden" placeholder="image link">
-  <input id="contents" class="hidden" placeholder="Write Your Tweet">
-  <input id="likes" class="hidden" placeholder="likes">
-  <input id="retweets" class="hidden" placeholder="retweets">
-  <button id="send" class="hidden">Send Twit</button>
+  <div class="topright">
+    <button id="create">Create Twit</button>
+    <input id="username" style="display:none" placeholder="username">
+    <input id="image" class="hidden" placeholder="image link">
+    <input id="contents" class="hidden" placeholder="Write Your Tweet">
+    <input id="likes" class="hidden" placeholder="likes">
+    <input id="retweets" class="hidden" placeholder="retweets">
+    <button id="send" class="hidden">Send Twit</button>
+  </div>
+  <div class="bottomright">
+    <button id="login">Sign In Here</button>
+    <button id="logout" class="hidden">Log Out</button>
+    <button id="edit" class="hidden">Edit Profile</button>
+    <button id="createname" style="display:none">Create/Change Username</button>
+    <button id="userimage" class="hidden">Change Profile Picture</button>
+  </div>
 </div>
 <div class = "column2">
   <div id="alltweets"></div>
 </div>
+
 <!-- partial -->
   <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js'></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/js/bootstrap.min.js'></script>

@@ -39,6 +39,14 @@ let renderTweet = (tObj,uuid)=>{
   `);
 }
 
+/*let updatepfp = (myuid, image)=>{
+  let pfp = rtdb.ref(db, 'profilepictures/' + myuid);
+  alert(pfp);
+  $("#userimage").append(`
+    <img id="pfp" class="hidden" src="${pfp}" class="img-fluid rounded-start" alt="..." width="100" height="100">
+  `);
+}*/
+
 let tweetRef = rtdb.ref(db, "/tweets");
 
 rtdb.onChildAdded(tweetRef, (ss)=>{
@@ -60,7 +68,7 @@ rtdb.onChildAdded(tweetRef, (ss)=>{
 		  // ...
 		}
 		// The signed-in user info.
-		var user = result.user;
+		user = result.user;
 	  }).catch((error) => {
 		// Handle Errors here.
 		var errorCode = error.code;
@@ -166,10 +174,40 @@ let updateRetweets = (ID, tweetID, newRetweetCount)=> {
   rtdb.update(tweetRef, updatedTweet);
 }
 
-let loggedin = ()=> {
+let loggedin = (user)=> {
   $("#login").hide();
-  $("#createname").show();
+  $("#edit").show();
   $("#logout").show();
+
+  let myuid = user.uid;
+
+  $("#createname").on('click', ()=>{
+    let name = prompt("Please enter your new username", "");
+    if (name == null || name == "") {
+      alert("Username not changed");
+    } else {
+      rtdb.set(rtdb.ref(db, 'users/' + myuid), {
+        "username": name
+      });
+    }
+  })
+
+  $("#userimage").on('click', ()=>{
+    let image = prompt("Please enter a link to an image", "");
+    if (image == null || image == "") {
+      alert("Image not changed");
+    } else {
+      //rtdb.remove(rtdb.ref(db, 'profilepictures/', myuid));
+      //let pfpRef = rtdb.ref(db, "profilepictures/" + myuid);
+      //alert(pfpRef);
+      rtdb.set(rtdb.ref(db, 'profilepictures/' + myuid), {
+        "userimage": image
+      });
+      /*$("#userimage").append(`
+        <img id="pfp" class="hidden" src="${pfpRef}" class="img-fluid rounded-start" alt="..." width="100" height="100">
+      `)*/
+    }
+  })
 }
 
 firebase.auth().onAuthStateChanged((user) => {
@@ -177,21 +215,44 @@ firebase.auth().onAuthStateChanged((user) => {
     // User is signed in, see docs for a list of available properties
     // https://firebase.google.com/docs/reference/js/firebase.User
     var uid = user.uid;
-    loggedin();
+    loggedin(user);
   } else {
     // User is signed out
     // ...
   }
 });
 
-$("#create").on('click', ()=>{
-  $("#username").show();
-  $("#image").show();
-  $("#contents").show();
-  $("#likes").show();
-  $("#retweets").show();
-  $("#send").show();
+$("#edit").on('click', ()=>{
+  if (document.getElementById("createname").style.display === "none"){
+    $("#createname").show();
+    $("#userimage").show();
+  } else {
+    $("#createname").hide();
+    $("#userimage").hide();
+  }
+})
+
+$("#logout").on('click', ()=>{
   firebase.auth().signOut();
+  history.go(0);
+})
+
+$("#create").on('click', ()=>{
+  if (document.getElementById("username").style.display === "none"){
+    $("#username").show();
+    $("#image").show();
+    $("#contents").show();
+    $("#likes").show();
+    $("#retweets").show();
+    $("#send").show();
+  } else {
+    $("#username").hide();
+    $("#image").hide();
+    $("#contents").hide();
+    $("#likes").hide();
+    $("#retweets").hide();
+    $("#send").hide();
+  }
 });
 
 $("#send").on('click', ()=>{

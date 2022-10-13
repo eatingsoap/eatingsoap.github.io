@@ -19,3 +19,14 @@ body {
   float: left;
   width: 90%
 }
+
+.topright {
+  position: fixed;
+  top: 55px;
+}
+
+.bottomright {
+  position: fixed;
+  bottom: 0px;
+  padding: 5px;
+}
