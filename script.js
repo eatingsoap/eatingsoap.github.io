@@ -166,6 +166,24 @@ let updateRetweets = (ID, tweetID, newRetweetCount)=> {
   rtdb.update(tweetRef, updatedTweet);
 }
 
+let loggedin = ()=> {
+  $("#login").hide();
+  $("#createname").show();
+  $("#logout").show();
+}
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    // User is signed in, see docs for a list of available properties
+    // https://firebase.google.com/docs/reference/js/firebase.User
+    var uid = user.uid;
+    loggedin();
+  } else {
+    // User is signed out
+    // ...
+  }
+});
+
 $("#create").on('click', ()=>{
   $("#username").show();
   $("#image").show();
@@ -173,6 +191,7 @@ $("#create").on('click', ()=>{
   $("#likes").show();
   $("#retweets").show();
   $("#send").show();
+  firebase.auth().signOut();
 });
 
 $("#send").on('click', ()=>{
