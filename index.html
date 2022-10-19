@@ -8,31 +8,40 @@
 </head>
 <body>
 <!-- partial:index.partial.html -->
-<div>
-  <img id="logo" src="https://www.freepnglogos.com/uploads/twitter-logo-png/twitter-logo-vector-png-clipart-1.png" width="55" height="55" align="left" alt="twitter logo">
-  <h1 id="header" align="center">Tweeter!!!</h1>
+
+<div id="loginpage">
+  <h1 align="left">Welcome to Tweeter!!!</h1>
+  <img id="loginlogo" src="https://www.freepnglogos.com/uploads/twitter-logo-png/twitter-logo-vector-png-clipart-1.png" width="300" height="300">
+  <div></div>
+  <button id="login" align="left">Login Here</button>
 </div>
 
-<div class = "column1">
-  <div class="topright">
-    <button id="create">Create Twit</button>
-    <input id="username" style="display:none" placeholder="username">
-    <input id="image" class="hidden" placeholder="image link">
-    <input id="contents" class="hidden" placeholder="Write Your Tweet">
-    <input id="likes" class="hidden" placeholder="likes">
-    <input id="retweets" class="hidden" placeholder="retweets">
-    <button id="send" class="hidden">Send Twit</button>
+<div id="mainpage">
+  <div id="header">
+    <img id="logo" src="https://www.freepnglogos.com/uploads/twitter-logo-png/twitter-logo-vector-png-clipart-1.png" width="55" height="55" align="left" alt="twitter logo">
+    <h1 id="headerText" align="center">Tweeter!!!</h1>
   </div>
-  <div class="bottomright">
-    <button id="login">Sign In Here</button>
-    <button id="logout" class="hidden">Log Out</button>
-    <button id="edit" class="hidden">Edit Profile</button>
-    <button id="createname" style="display:none">Create/Change Username</button>
-    <button id="userimage" class="hidden">Change Profile Picture</button>
+
+  <div class = "column1">
+    <div class="topright">
+      <button id="create">Create Twit</button>
+      <input id="username" style="display:none" placeholder="username">
+      <input id="image" class="hidden" placeholder="image link">
+      <input id="contents" class="hidden" placeholder="Write Your Tweet">
+      <input id="likes" class="hidden" placeholder="likes">
+      <input id="retweets" class="hidden" placeholder="retweets">
+      <button id="send" class="hidden">Send Twit</button>
+    </div>
+    <div class="bottomright">
+      <button id="edit" class="hidden">Edit Profile</button>
+      <button id="createname" style="display:none">Create/Change Username</button>
+      <button id="userimage" class="hidden">Change Profile Picture</button>
+      <button id="logout" class="hidden">Log Out</button>
+    </div>
   </div>
-</div>
-<div class = "column2">
-  <div id="alltweets"></div>
+  <div class = "column2">
+    <div id="alltweets"></div>
+  </div>
 </div>
 
 <!-- partial -->

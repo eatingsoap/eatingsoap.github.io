@@ -11,168 +11,25 @@ const firebaseConfig = {
   appId: "1:216412550524:web:28f675fbb043296a0ea0f9"
 };
 
-firebase.initializeApp(firebaseConfig);
 const app = initializeApp(firebaseConfig);
 let db = rtdb.getDatabase(app);
 var provider = new firebase.auth.GoogleAuthProvider();
 
-let renderTweet = (tObj,uuid)=>{
-  $("#alltweets").prepend(`
-<div class="card mb-3 tweet column2" data-uuid="${uuid}" style="max-width: 500px;">
-  <div class="row g-0">
-    <div class="col-md-4">
-      <img src="${tObj.author.pic}" class="img-fluid rounded-start" alt="...">
-    </div>
-    <div class="col-md-8">
-      <div class="card-body">
-        <h5 class="card-title">${tObj.author.handle}</h5>
-        <p class="card-text">${tObj.content}</p>
-        <p class="card-text" id="likeRetweet${uuid}">Likes: ${tObj.likes} Retweets: ${tObj.retweets}</p>
-        <p class="card-text"><small class="text-muted">Tweeted at ${new Date(tObj.timestamp).toLocaleString()}</small></p>
-        <button style="background-color:#f04337" id="likebutton" href="#" class="btn btn-primary like button" data-uuid="${uuid}">Like</button>
-        <button style="background-color:#23ba3a" id="retweetbutton" href="#" class="btn btn-primary retweet button" data-uuid="${uuid}">Retweet</button>
-        <button style="background-color:black" id="deletebutton" href="#" class="btn btn-primary delete button" class="align-right" data-uuid="${uuid}">Delete</button>
-      </div>
-    </div>
-  </div>
-</div>
-  `);
-}
-
-/*let updatepfp = (myuid, image)=>{
-  let pfp = rtdb.ref(db, 'profilepictures/' + myuid);
-  alert(pfp);
-  $("#userimage").append(`
-    <img id="pfp" class="hidden" src="${pfp}" class="img-fluid rounded-start" alt="..." width="100" height="100">
-  `);
-}*/
-
-let tweetRef = rtdb.ref(db, "/tweets");
-
-rtdb.onChildAdded(tweetRef, (ss)=>{
-  let tObj = ss.val();
-  renderTweet(tObj, ss.key);
-  
-  $("#login").off("click");
-  $("#login").on("click", (evt)=>{
-	firebase.auth().signInWithRedirect(provider);
-	  firebase.auth()
-	  .getRedirectResult()
-	  .then((result) => {
-	    if (result.credential) {
-		  /** @type {firebase.auth.OAuthCredential} */
-		  var credential = result.credential;
-
-		  // This gives you a Google Access Token. You can use it to access the Google API.
-		  var token = credential.accessToken;
-		  // ...
-		}
-		// The signed-in user info.
-		user = result.user;
-	  }).catch((error) => {
-		// Handle Errors here.
-		var errorCode = error.code;
-		var errorMessage = error.message;
-		// The email of the user's account used.
-		var email = error.email;
-		// The firebase.auth.AuthCredential type that was used.
-		var credential = error.credential;
-		// ...
-	});
-  });
-  
-  $("#likebutton").off("click");
-  $("#likebutton").on("click", (evt)=>{
-    let ID = $(evt.currentTarget).attr("data-uuid");
-    let likeRef = rtdb.ref(db, "/tweets/" + ID);
-    rtdb.get(likeRef).then(ss=> {
-      const tweetID = ss.val();
-      let addLikes = parseInt(tweetID.likes) + 1;
-      updateLikes(ID, tweetID, addLikes);
-    });
-  });
+firebase.initializeApp(firebaseConfig);
+firebase.auth().onAuthStateChanged(user => {
+  if (!user) {
+    $("#mainpage").hide();
+    $("#loginpage").show();
     
-  $("#retweetbutton").off("click");
-  $("#retweetbutton").on("click", (evt)=>{
-    let ID = $(evt.currentTarget).attr("data-uuid");
-    let retweetRef = rtdb.ref(db, "/tweets/" + ID);
-    rtdb.get(retweetRef).then(ss=> {
-      const tweetID = ss.val();
-      let addRetweet = parseInt(tweetID.retweets) + 1;
-      updateRetweets(ID, tweetID, addRetweet);
+    $("#login").on("click", (evt)=>{
+      firebase.auth().signInWithRedirect(provider);
     });
-  });
-  
-  $("#deletebutton").off("click");
-  $("#deletebutton").on("click", (evt)=>{
-    let ID = $(evt.currentTarget).attr("data-uuid");
-    let deleteRef = rtdb.ref(db, "/tweets/" + ID);
-    deleteTweet(deleteRef);
-    history.go(0);
-  });
+  } else {
+    $("mainpage").show();
+    $("#loginpage").hide();
+    loggedin(user);
+  }
 });
-
-rtdb.onChildChanged(tweetRef, (ss)=>{
-  let tObj = ss.val();
-  let ID = ss.key;
-  let newText = "Likes: " + tObj.likes + " Retweets: " + tObj.retweets;
-  $("#likeRetweet" + [ID]).text(newText);
-});
-
-let createTweet = ()=>{
-  let username = $("#username").val() || "nobody";
-  let image = $("#image").val() || "https://www.freepnglogos.com/uploads/twitter-logo-png/twitter-logo-vector-png-clipart-1.png";
-  let contents = $("#contents").val() || "write something next time lol";
-  let likes = $("#likes").val() || 0;
-  let retweets = $("#retweets").val() || 0;
-  const myObj = {
-    "author": {
-      "handle": username,
-      "pic": image
-    },
-    "content": contents,
-    "likes": likes,
-    "retweets": retweets,
-    "timestamp": new Date().getTime()
-  };
-  rtdb.push(tweetRef, myObj);
-}
-
-let deleteTweet = (deleteRef)=>{
-  rtdb.remove(deleteRef);
-}
-
-let updateLikes = (ID, tweetID, newLikeCount)=> {
-  let updatedTweet = {
-    [ID]:{
-      "author":{
-        "handle": tweetID.author.handle,
-        "pic": tweetID.author.pic
-      },
-      "content": tweetID.content,
-      "likes": newLikeCount,
-      "retweets": tweetID.retweets,
-      "timestamp": tweetID.timestamp
-    }
-  };
-  rtdb.update(tweetRef, updatedTweet);
-}
-
-let updateRetweets = (ID, tweetID, newRetweetCount)=> {
-  let updatedTweet = {
-    [ID]:{
-      "author":{
-        "handle": tweetID.author.handle,
-        "pic": tweetID.author.pic
-      },
-      "content": tweetID.content,
-      "likes": tweetID.likes,
-      "retweets": newRetweetCount,
-      "timestamp": tweetID.timestamp
-    }
-  };
-  rtdb.update(tweetRef, updatedTweet);
-}
 
 let loggedin = (user)=> {
   $("#login").hide();
@@ -210,17 +67,125 @@ let loggedin = (user)=> {
   })
 }
 
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    // User is signed in, see docs for a list of available properties
-    // https://firebase.google.com/docs/reference/js/firebase.User
-    var uid = user.uid;
-    loggedin(user);
-  } else {
-    // User is signed out
-    // ...
-  }
+let renderTweet = (tObj,uuid)=>{
+  $("#alltweets").prepend(`
+<div class="card mb-3 tweet column2" data-uuid="${uuid}" style="max-width: 500px;">
+  <div class="row g-0">
+    <div class="col-md-4">
+      <img src="${tObj.author.pic}" class="img-fluid rounded-start" alt="...">
+    </div>
+    <div class="col-md-8">
+      <div class="card-body">
+        <h5 class="card-title">${tObj.author.handle}</h5>
+        <p class="card-text">${tObj.content}</p>
+        <p class="card-text" id="likeRetweet${uuid}">Likes: ${tObj.likes} Retweets: ${tObj.retweets}</p>
+        <p class="card-text"><small class="text-muted">Tweeted at ${new Date(tObj.timestamp).toLocaleString()}</small></p>
+        <button style="background-color:#f04337" id="likebutton" href="#" class="btn btn-primary like button" data-uuid="${uuid}">Like</button>
+        <button style="background-color:#23ba3a" id="retweetbutton" href="#" class="btn btn-primary retweet button" data-uuid="${uuid}">Retweet</button>
+        <button style="background-color:black" id="deletebutton" href="#" class="btn btn-primary delete button" class="align-right" data-uuid="${uuid}">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+  `);
+}
+
+let tweetRef = rtdb.ref(db, "/tweets");
+
+rtdb.onChildAdded(tweetRef, (ss)=>{
+  let tObj = ss.val();
+  renderTweet(tObj, ss.key);
+  const currentUser = firebase.auth().currentUser;
+  
+  $("#likebutton").off("click");
+  $("#likebutton").on("click", (evt)=>{
+    let ID = $(evt.currentTarget).attr("data-uuid");
+    let likeRef = firebase.database().ref("/tweets").child(ID);
+    toggleLike(likeRef, currentUser.uid);
+  });
+    
+  $("#retweetbutton").off("click");
+  $("#retweetbutton").on("click", (evt)=>{
+    let ID = $(evt.currentTarget).attr("data-uuid");
+    let retweetRef = firebase.database().ref("/tweets").child(ID);
+    toggleRetweet(retweetRef, currentUser.uid);
+  });
+  
+  $("#deletebutton").off("click");
+  $("#deletebutton").on("click", (evt)=>{
+    let ID = $(evt.currentTarget).attr("data-uuid");
+    let deleteRef = firebase.database().ref("/tweets").child(ID);
+    //if(deleteRef)
+    deleteTweet(deleteRef);
+    history.go(0);
+  });
 });
+
+let toggleLike = (tweetRef, uid)=> {
+  tweetRef.transaction((tObj) => {
+    if (tObj) {
+      if (tObj.likes && tObj.liked_by_user[uid]) {
+        tObj.likes--;
+        tObj.liked_by_user[uid] = null;
+      } else {
+        tObj.likes++;
+        if (!tObj.liked_by_user) {
+          tObj.liked_by_user = {};
+        }
+        tObj.liked_by_user[uid] = true;
+      }
+    }
+    return tObj;
+  });
+}
+
+let toggleRetweet = (tweetRef, uid)=> {
+  tweetRef.transaction((tObj) => {
+    if (tObj) {
+      if (tObj.retweets && tObj.retweeted_by_user[uid]) {
+        tObj.retweets--;
+        tObj.retweeted_by_user[uid] = null;
+      } else {
+        tObj.retweets++;
+        if (!tObj.retweeted_by_user) {
+          tObj.retweeted_by_user = {};
+        }
+        tObj.retweeted_by_user[uid] = true;
+      }
+    }
+    return tObj;
+  });
+}
+
+rtdb.onChildChanged(tweetRef, (ss)=>{
+  let tObj = ss.val();
+  let ID = ss.key;
+  let newText = "Likes: " + tObj.likes + " Retweets: " + tObj.retweets;
+  $("#likeRetweet" + [ID]).text(newText);
+});
+
+let createTweet = ()=>{
+  let username = $("#username").val() || "nobody";
+  let image = $("#image").val() || "https://www.freepnglogos.com/uploads/twitter-logo-png/twitter-logo-vector-png-clipart-1.png";
+  let contents = $("#contents").val() || "write something next time lol";
+  let likes = $("#likes").val() || 0;
+  let retweets = $("#retweets").val() || 0;
+  const myObj = {
+    "author": {
+      "handle": username,
+      "pic": image
+    },
+    "content": contents,
+    "likes": likes,
+    "retweets": retweets,
+    "timestamp": new Date().getTime()
+  };
+  rtdb.push(tweetRef, myObj);
+}
+
+let deleteTweet = (deleteRef)=>{
+  rtdb.remove(deleteRef);
+}
 
 $("#edit").on('click', ()=>{
   if (document.getElementById("createname").style.display === "none"){
