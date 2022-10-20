@@ -68,15 +68,24 @@ let loggedin = (user)=> {
 }
 
 let renderTweet = (tObj,uuid)=>{
-  $("#alltweets").prepend(`
+  let userID = tObj.authorID;
+  var userRef = firebase.database().ref().child("/users").child(userID);
+  userRef.get().then((ss) => {
+    let userData = ss.val();
+    if(userData){
+      let userData = ss.val();
+      var userHandle = userData.handle;
+      var userImage = userData.pic;
+    }
+    $("#alltweets").prepend(`
 <div class="card mb-3 tweet column2" data-uuid="${uuid}" style="max-width: 500px;">
   <div class="row g-0">
     <div class="col-md-4">
-      <img src="${tObj.author.pic}" class="img-fluid rounded-start" alt="...">
+      <img src="${userImage}" class="img-fluid rounded-start" alt="...">
     </div>
     <div class="col-md-8">
       <div class="card-body">
-        <h5 class="card-title">${tObj.author.handle}</h5>
+        <h5 class="card-title">${userHandle}</h5>
         <p class="card-text">${tObj.content}</p>
         <p class="card-text" id="likeRetweet${uuid}">Likes: ${tObj.likes} Retweets: ${tObj.retweets}</p>
         <p class="card-text"><small class="text-muted">Tweeted at ${new Date(tObj.timestamp).toLocaleString()}</small></p>
@@ -88,6 +97,33 @@ let renderTweet = (tObj,uuid)=>{
   </div>
 </div>
   `);
+  const currentUser = firebase.auth().currentUser;
+  
+  $("#likebutton").off("click");
+  $("#likebutton").on("click", (evt) => {
+    let ID = $(evt.currentTarget).attr("data-uuid");
+    let likeRef = firebase.database().ref("/tweets").child(ID);
+    toggleLike(likeRef, currentUser.uid);
+  });
+    
+  $("#retweetbutton").off("click");
+  $("#retweetbutton").on("click", (evt) => {
+    let ID = $(evt.currentTarget).attr("data-uuid");
+    let retweetRef = firebase.database().ref("/tweets").child(ID);
+    toggleRetweet(retweetRef, currentUser.uid);
+  });
+  
+  $("#deletebutton").off("click");
+  $("#deletebutton").on("click", (evt) => {
+    let ID = $(evt.currentTarget).attr("data-uuid");
+    let authorID = currentUser.uid;
+    let deleteRef = rtdb.ref(db, "/tweets/" + ID);
+    let authorDeleteRef = rtdb.ref(db, "/users/" + authorID + "/tweets/" + ID);
+    rtdb.remove(deleteRef);
+    rtdb.remove(authorDeleteRef);
+    history.go(0);
+  });
+  });
 }
 
 let tweetRef = rtdb.ref(db, "/tweets");
@@ -95,30 +131,6 @@ let tweetRef = rtdb.ref(db, "/tweets");
 rtdb.onChildAdded(tweetRef, (ss)=>{
   let tObj = ss.val();
   renderTweet(tObj, ss.key);
-  const currentUser = firebase.auth().currentUser;
-  
-  $("#likebutton").off("click");
-  $("#likebutton").on("click", (evt)=>{
-    let ID = $(evt.currentTarget).attr("data-uuid");
-    let likeRef = firebase.database().ref("/tweets").child(ID);
-    toggleLike(likeRef, currentUser.uid);
-  });
-    
-  $("#retweetbutton").off("click");
-  $("#retweetbutton").on("click", (evt)=>{
-    let ID = $(evt.currentTarget).attr("data-uuid");
-    let retweetRef = firebase.database().ref("/tweets").child(ID);
-    toggleRetweet(retweetRef, currentUser.uid);
-  });
-  
-  $("#deletebutton").off("click");
-  $("#deletebutton").on("click", (evt)=>{
-    let ID = $(evt.currentTarget).attr("data-uuid");
-    let deleteRef = firebase.database().ref("/tweets").child(ID);
-    //if(deleteRef)
-    deleteTweet(deleteRef);
-    history.go(0);
-  });
 });
 
 let toggleLike = (tweetRef, uid)=> {
@@ -165,35 +177,57 @@ rtdb.onChildChanged(tweetRef, (ss)=>{
 });
 
 let createTweet = ()=>{
-  let username = $("#username").val() || "nobody";
-  let image = $("#image").val() || "https://www.freepnglogos.com/uploads/twitter-logo-png/twitter-logo-vector-png-clipart-1.png";
+  const user = firebase.auth().currentUser;
   let contents = $("#contents").val() || "write something next time lol";
-  let likes = $("#likes").val() || 0;
-  let retweets = $("#retweets").val() || 0;
+  let likes = 0;
+  let retweets = 0;
+  var myRef = firebase.database().ref().child("/tweets").push()
+  var tweetID = myRef.key;
   const myObj = {
-    "author": {
-      "handle": username,
-      "pic": image
-    },
     "content": contents,
     "likes": likes,
     "retweets": retweets,
-    "timestamp": new Date().getTime()
+    "timestamp": new Date().getTime(),
+    "authorID": user.uid
   };
-  rtdb.push(tweetRef, myObj);
+  updateUser(user, tweetID);
+  myRef.set(myObj);
 }
 
-let deleteTweet = (deleteRef)=>{
-  rtdb.remove(deleteRef);
+let updateUser = (user, tweetRef) => {
+  var userRef = firebase.database().ref().child("/users").child(user.uid);
+  userRef.get().then((ss) => {
+    let userdata = ss.val();
+    if(!userdata){
+      const newUser = {
+        "handle": user.displayName,
+        "pic": user.photoURL,
+        "tweets":{
+          [tweetRef] : true,
+        }
+      };
+      userRef.set(newUser);
+    }
+    else{
+      const newTweet = {
+        [tweetRef] : true,
+      }
+      userRef.child("/tweets").update(newTweet);
+    }
+  })
 }
 
 $("#edit").on('click', ()=>{
   if (document.getElementById("createname").style.display === "none"){
     $("#createname").show();
+    $("#createnamediv").show();
     $("#userimage").show();
+    $("#userimagediv").show();
   } else {
     $("#createname").hide();
+    $("#createnamediv").hide();
     $("#userimage").hide();
+    $("#userimagediv").hide();
   }
 })
 
@@ -203,32 +237,20 @@ $("#logout").on('click', ()=>{
 })
 
 $("#create").on('click', ()=>{
-  if (document.getElementById("username").style.display === "none"){
-    $("#username").show();
-    $("#image").show();
+  if (document.getElementById("contents").style.display === "none"){
     $("#contents").show();
-    $("#likes").show();
-    $("#retweets").show();
     $("#send").show();
   } else {
-    $("#username").hide();
-    $("#image").hide();
     $("#contents").hide();
-    $("#likes").hide();
-    $("#retweets").hide();
     $("#send").hide();
   }
 });
 
 $("#send").on('click', ()=>{
-  $("#username").hide();
-  $("#image").hide();
   $("#contents").hide();
-  $("#likes").hide();
-  $("#retweets").hide();
   $("#send").hide();
   createTweet();
-  const inputs = document.querySelectorAll('#username, #image, #contents, #likes, #retweets')
+  const inputs = document.querySelectorAll('#contents')
   inputs.forEach(input => {
     input.value = '';
   });
