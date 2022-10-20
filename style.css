@@ -12,12 +12,12 @@ body {
 
 .column1 {
   float: right;
-  width: 25%;
+  width: 10%;
 }
 
 .column2 {
   float: left;
-  width: 75%
+  width: 90%
 }
 
 .topright {
@@ -29,9 +29,4 @@ body {
   position: fixed;
   bottom: 0px;
   padding: 5px;
-}
-
-.twitter {
-  word-wrap: break-word;
-  word-break: break-all;
 }
