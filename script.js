@@ -37,15 +37,28 @@ let loggedin = (user)=> {
   $("#logout").show();
 
   let myuid = user.uid;
+  var userRef = firebase.database().ref().child("/users").child(myuid);
+  userRef.get().then((ss) => {
+    let userData = ss.val();
+    if(!userData){
+      let userHandle = user.displayName;
+      let userImage = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460__480.png";
+      $("#loggeduser").prepend(`<img width="150" height="150" src=${userImage}></img>`)
+      $("#loggeduser").prepend(`<h6><font color="#05dbfc">Logged in as: ${userHandle}</h6>`);
+    }
+    else{
+      $("#loggeduser").prepend(`<img width="150" height="150" src=${userData.pic}></img>`)
+      $("#loggeduser").prepend(`<h6><font color="#05dbfc">Logged in as: ${userData.handle}</h6>`);
+    }
+  });
 
   $("#createname").on('click', ()=>{
     let name = prompt("Please enter your new username", "");
     if (name == null || name == "") {
       alert("Username not changed");
     } else {
-      rtdb.set(rtdb.ref(db, 'users/' + myuid), {
-        "username": name
-      });
+      userRef.child("handle").set(name);
+      history.go(0);
     }
   })
 
@@ -54,21 +67,15 @@ let loggedin = (user)=> {
     if (image == null || image == "") {
       alert("Image not changed");
     } else {
-      //rtdb.remove(rtdb.ref(db, 'profilepictures/', myuid));
-      //let pfpRef = rtdb.ref(db, "profilepictures/" + myuid);
-      //alert(pfpRef);
-      rtdb.set(rtdb.ref(db, 'profilepictures/' + myuid), {
-        "userimage": image
-      });
-      /*$("#userimage").append(`
-        <img id="pfp" class="hidden" src="${pfpRef}" class="img-fluid rounded-start" alt="..." width="100" height="100">
-      `)*/
+      userRef.child("pic").set(image);
+      history.go(0);
     }
   })
 }
 
 let renderTweet = (tObj,uuid)=>{
   let userID = tObj.authorID;
+  var user = firebase.auth().currentUser;
   var userRef = firebase.database().ref().child("/users").child(userID);
   userRef.get().then((ss) => {
     let userData = ss.val();
@@ -89,9 +96,10 @@ let renderTweet = (tObj,uuid)=>{
         <p class="card-text">${tObj.content}</p>
         <p class="card-text" id="likeRetweet${uuid}">Likes: ${tObj.likes} Retweets: ${tObj.retweets}</p>
         <p class="card-text"><small class="text-muted">Tweeted at ${new Date(tObj.timestamp).toLocaleString()}</small></p>
-        <button style="background-color:#f04337" id="likebutton" href="#" class="btn btn-primary like button" data-uuid="${uuid}">Like</button>
-        <button style="background-color:#23ba3a" id="retweetbutton" href="#" class="btn btn-primary retweet button" data-uuid="${uuid}">Retweet</button>
-        <button style="background-color:black" id="deletebutton" href="#" class="btn btn-primary delete button" class="align-right" data-uuid="${uuid}">Delete</button>
+        <div id="buttons-${uuid}">
+          <button style="background-color:#f04337" id="likebutton" href="#" class="btn btn-primary like button" data-uuid="${uuid}">Like</button>
+          <button style="background-color:#23ba3a" id="retweetbutton" href="#" class="btn btn-primary retweet button" data-uuid="${uuid}">Retweet</button>
+        </div>
       </div>
     </div>
   </div>
@@ -113,6 +121,10 @@ let renderTweet = (tObj,uuid)=>{
     toggleRetweet(retweetRef, currentUser.uid);
   });
   
+  if(currentUser.uid==userID){
+    $("#buttons-"+uuid).append(`<button style="background-color:black" id="deletebutton" href="#" class="btn btn-primary delete button" class="align-right" data-uuid="${uuid}">Delete</button>`);
+  }
+
   $("#deletebutton").off("click");
   $("#deletebutton").on("click", (evt) => {
     let ID = $(evt.currentTarget).attr("data-uuid");
@@ -201,7 +213,7 @@ let updateUser = (user, tweetRef) => {
     if(!userdata){
       const newUser = {
         "handle": user.displayName,
-        "pic": user.photoURL,
+        "pic": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460__480.png",
         "tweets":{
           [tweetRef] : true,
         }
