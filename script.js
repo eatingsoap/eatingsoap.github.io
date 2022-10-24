@@ -56,7 +56,12 @@ let loggedin = (user)=> {
     let name = prompt("Please enter your new username", "");
     if (name == null || name == "") {
       alert("Username not changed");
-    } else {
+    } 
+    if (name.length > 25){
+      alert("Username too long, must be shorter than 25 characters");
+    } 
+    else {
+      name = name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
       userRef.child("handle").set(name);
       history.go(0);
     }
@@ -67,6 +72,7 @@ let loggedin = (user)=> {
     if (image == null || image == "") {
       alert("Image not changed");
     } else {
+      image = image.replace(/</g, "&lt;").replace(/>/g, "&gt;");
       userRef.child("pic").set(image);
       history.go(0);
     }
@@ -75,7 +81,7 @@ let loggedin = (user)=> {
 
 let renderTweet = (tObj,uuid)=>{
   let userID = tObj.authorID;
-  var user = firebase.auth().currentUser;
+  //var user = firebase.auth().currentUser;
   var userRef = firebase.database().ref().child("/users").child(userID);
   userRef.get().then((ss) => {
     let userData = ss.val();
@@ -85,16 +91,16 @@ let renderTweet = (tObj,uuid)=>{
       var userImage = userData.pic;
     }
     $("#alltweets").prepend(`
-<div class="card mb-3 tweet column2" data-uuid="${uuid}" style="max-width: 500px;">
+<div class="card mb-3 tweet column2" data-uuid="${uuid}" style="max-width: 700px;max-height: 500px;min-height: 250px">
   <div class="row g-0">
     <div class="col-md-4">
-      <img src="${userImage}" class="img-fluid rounded-start" alt="...">
+      <img width="150" height="150" src="${userImage}" class="img-fluid rounded-start" alt="...">
     </div>
     <div class="col-md-8">
       <div class="card-body">
         <h5 class="card-title">${userHandle}</h5>
         <p class="card-text">${tObj.content}</p>
-        <p class="card-text" id="likeRetweet${uuid}">Likes: ${tObj.likes} Retweets: ${tObj.retweets}</p>
+        <h6 class="card-text" id="likeRetweet${uuid}"><small>Likes: ${tObj.likes} Retweets: ${tObj.retweets}</small></h6>
         <p class="card-text"><small class="text-muted">Tweeted at ${new Date(tObj.timestamp).toLocaleString()}</small></p>
         <div id="buttons-${uuid}">
           <button style="background-color:#f04337" id="likebutton" href="#" class="btn btn-primary like button" data-uuid="${uuid}">Like</button>
@@ -191,6 +197,7 @@ rtdb.onChildChanged(tweetRef, (ss)=>{
 let createTweet = ()=>{
   const user = firebase.auth().currentUser;
   let contents = $("#contents").val() || "write something next time lol";
+  contents = contents.replace(/</g, "&lt;").replace(/>/g, "&gt;")
   let likes = 0;
   let retweets = 0;
   var myRef = firebase.database().ref().child("/tweets").push()
